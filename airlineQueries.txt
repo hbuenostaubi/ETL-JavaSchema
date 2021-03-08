@@ -1,0 +1,91 @@
+create database Airline;
+#drop database Airline;
+#drop table Passengers;
+use Airline;
+
+
+/*creating the tables for Airline*/
+Create table Airline.Airplane(
+AircraftMaker	Varchar(30)	not null, 
+AircraftModel	Varchar(30) not null, 
+Capacity	integer	not null, 
+primary key(AircraftModel)
+);
+/**/
+CREATE TABLE Flight(
+FlightDate 	date	NOT NULL, 
+Carrier	VARCHAR(30)	NOT NULL,
+FlightNum	integer	Not null, 
+Origin	VARCHAR(30)	not null, 
+Dest VARCHAR(30)	not null,
+DepTime	integer		not null,
+ArrTime	integer		not null,
+Model	VARCHAR(30)	not null,
+
+primary key(FlightDate, FlightNum), 
+foreign key(Model) references Airplane(AircraftModel)
+);
+
+create table Airline.Passengers(
+name	varchar(30)	not null, 
+email	varchar(30)	not null, 
+DOB	date	not null, 
+primary key(email)
+);
+
+create table Airline.Booking(
+bookingID	integer	not null, 
+fd_id	date	not null, 
+fn_id	integer	not null, 
+bookingDate	date	not null, 
+price	float	not null, 
+netPrice	float	not null, 
+Engine	varchar(30)	not null, 
+activityDate	date	not null, 
+p_id	varchar(30)	not null,
+type	varchar(30)	not null,
+
+primary key(bookingID),
+foreign key(fd_id, fn_id) references Flight(FlightDate, FlightNum),
+foreign key(p_id)	references Passengers(email)
+);
+
+#1
+select date_format(bookingDate, '%M %Y') as bookMonth, count(p_id) as Pax 
+from Airline.Booking group by bookMonth;
+#2
+select date_format(fd_id, '%M %Y') as departureMonth, count(p_id) as Pax 
+from Airline.Booking group by departureMonth;
+#3
+select AircraftMaker,AircraftModel, Capacity as TopCapacity from Airline.Airplane
+group by AircraftModel order by TopCapacity desc limit 3;
+#4
+select AircraftMaker, AircraftModel, Capacity as LowestCapacity from Airline.Airplane
+group by AircraftModel order by LowestCapacity asc limit 3;
+#5.  nested query
+select AircraftMaker, AircraftModel, Capacity from Airline.Airplane
+where Capacity >
+(select avg(capacity) from Airline.Airplane);
+#6. Selects outbound airport by passengers in ascending order:  //two tables
+select F.Origin as Origin, Count(B.p_id) as pax
+from Airline.Flight as F, Airline.Booking as B 
+where F.FlightNum=B.fn_id and F.FlightDate=B.fd_id
+group by Origin order by pax desc;
+#7. //Two tables
+select F.Dest as Destination, Count(B.p_id) as pax
+from Airline.Flight as F, Airline.Booking as B 
+where F.FlightNum=B.fn_id and F.FlightDate=B.fd_id
+group by Destination order by pax desc;
+#8.  /// two tables 
+select B.Engine as Engine, count(P.name) as pax
+from Booking as B, Passengers as P 
+where P.email=B.p_id
+group by Engine order by pax desc;
+#9
+select date_format(activityDate, '%M %Y') as ActivityDate, Count(p_id) as pax
+from Booking group by ActivityDate order by pax desc;
+#10
+select Engine, round(avg(Price),2) as AvgPrice
+from Booking 
+where avg(Price) > (select avg(Price) from Booking)
+group by Engine order by avgPrice desc;
